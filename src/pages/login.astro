@@ -1,0 +1,55 @@
+---
+import Layout from "../layouts/Layout.astro";
+import { authLoginParser } from "../appTypes/apiTypes.ts";
+
+if (Astro.request.method === "POST") {
+	const formData = await Astro.request.formData();
+	const formDataEntries = Object.fromEntries(formData.entries());
+	console.log({ formDataEntries });
+	const parsedFormData = authLoginParser.safeParse(formDataEntries);
+
+	console.log(JSON.stringify(parsedFormData));
+
+	if (parsedFormData.success) {
+		const postLogin = await fetch(
+			"https://frontend-take-home-service.fetch.com/auth/login",
+			{
+				method: "POST",
+				headers: {
+					"Content-Type": "application/json",
+				},
+				body: JSON.stringify(parsedFormData.data),
+				redirect: "follow",
+			},
+		);
+
+		if (!postLogin.ok) {
+			console.log({ postLogin });
+			throw new Error("login failed");
+		}
+
+		console.log({ cookies: postLogin.headers });
+	}
+}
+---
+
+<Layout title="please login">
+	<div>login</div>
+	<form class="flex flex-col gap-2 w-fit mx-auto my-auto" method="post">
+		<input
+			type="text"
+			name="name"
+			required
+			placeholder="username"
+			class="bg-transparent rounded-lg border border-white text-center"
+		/>
+		<input
+			type="text"
+			name="email"
+			required
+			placeholder="email"
+			class="bg-transparent rounded-lg border border-white text-center"
+		/>
+		<button type="submit"> login </button>
+	</form>
+</Layout>

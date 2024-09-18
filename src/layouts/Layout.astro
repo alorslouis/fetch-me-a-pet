@@ -1,6 +1,8 @@
 ---
 interface Props {
-	title: string;
+  title: string;
+  isHTMX?: boolean;
+  fullWidth?: boolean;
 }
 
 const { title } = Astro.props;
@@ -8,43 +10,30 @@ const { title } = Astro.props;
 
 <!doctype html>
 <html lang="en">
-	<head>
-		<meta charset="UTF-8" />
-		<meta name="description" content="Astro description" />
-		<meta name="viewport" content="width=device-width" />
-		<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-		<meta name="generator" content={Astro.generator} />
-		<title>{title}</title>
-	</head>
-	<body>
-		<slot />
-	</body>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width" />
+    <link rel="icon" type="image/png" href="/favicon.png" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="apple-touch-icon" href="/favicon.png" />
+    <meta name="generator" content={Astro.generator} />
+  </head>
+
+  <body class="text-white h-dvh flex flex-col bg-slate-950">
+    <header class="flex">
+      <a href="/" class="p-4"> home </a>
+    </header>
+
+    <main class="flex flex-col grow h-fit">
+      <slot />
+    </main>
+
+    <footer
+      class="text-white mb-1 mt-4 sticky bottom-0 font-thin py-2 px-4 backdrop-blur-3xl flex w-fit rounded-tr-lg"
+    >
+      <a href="/" class="">
+        <!--sicq_ - {new Date().getFullYear()} - sd.ca // ny.ny-->
+      </a>
+    </footer>
+  </body>
 </html>
-<style is:global>
-	:root {
-		--accent: 136, 58, 234;
-		--accent-light: 224, 204, 250;
-		--accent-dark: 49, 10, 101;
-		--accent-gradient: linear-gradient(
-			45deg,
-			rgb(var(--accent)),
-			rgb(var(--accent-light)) 30%,
-			white 60%
-		);
-	}
-	html {
-		font-family: system-ui, sans-serif;
-		background: #13151a;
-	}
-	code {
-		font-family:
-			Menlo,
-			Monaco,
-			Lucida Console,
-			Liberation Mono,
-			DejaVu Sans Mono,
-			Bitstream Vera Sans Mono,
-			Courier New,
-			monospace;
-	}
-</style>
