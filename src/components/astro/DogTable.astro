@@ -1,0 +1,71 @@
+---
+import type { Dog } from "@typedef/apiTypes";
+import { faker } from "@faker-js/faker";
+import DogTableRow from "./DogTableRow.astro";
+
+const dummyDogs: Dog[] = Array.from({ length: 20 }).map((_, i) => {
+	return {
+		img: `https://loremflickr.com/320/240/dog?random=${i}`,
+		id: (i + 1).toString(),
+		name: faker.person.firstName(),
+		breed: faker.person.lastName(),
+		age: Math.round(Math.random() * 10),
+		zip_code: faker.location.zipCode(),
+	};
+});
+
+const fetchUrl = new URL("https://frontend-take-home-service.fetch.com");
+
+fetchUrl.pathname = "dogs/search";
+
+console.log(fetchUrl.href);
+
+console.log({ cookies: Astro.cookies.get("fetch-access-token") });
+//const testFetch = console.log(
+//	fetch(fetchUrl.href, {
+//		method: "GET",
+//		headers: {
+//			"Content-Type": "application/json",
+//			Cookie: "fetch-access-token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJuYW1lIjoidGVzdHkgdGVzdGVyc29uIiwiZW1haWwiOiJ0ZXN0QHRlc3R5dGVzdC5jb20iLCJpYXQiOjE3MjY3NzE5MDQsImV4cCI6MTcyNjc3NTUwNH0.jCwtemqEeyhiRdNbh872tUfRliPkZpeAJuYGGy9NeQ4",
+//		},
+//	}),
+//);
+
+const FATTTY = Astro.cookies.get("fetch-access-token");
+console.log({ FATTTY });
+const FAT =
+	"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJuYW1lIjoibGEiLCJlbWFpbCI6ImxhQGxhLmNvbSIsImlhdCI6MTcyNjc4NTEwOCwiZXhwIjoxNzI2Nzg4NzA4fQ.7Tce6K8B_R4tGhSAs1oerlvpAEbuwqtk8-WR7rCaUyk";
+
+const testFetch = await fetch(fetchUrl.href, {
+	method: "GET",
+	headers: {
+		"Content-Type": "application/json",
+		Cookie: `fetch-access-token=${FATTTY?.value}`,
+	},
+	credentials: "include",
+});
+//
+console.log({ testFetch });
+//console.log({ headers: testFetch.headers });
+if (testFetch.ok) {
+	console.log({ fetchJSON: await testFetch.json() });
+}
+
+const headerVals = Object.keys(dummyDogs[0]);
+---
+
+<table class="table table-fixed">
+	<caption class="text-start"> available dogs </caption>
+	<thead>
+		<tr>
+			{
+				headerVals.map((hVal) => (
+					<td class="text-center">{hVal}</td>
+				))
+			}
+		</tr>
+	</thead>
+	<tbody class="group">
+		{dummyDogs.map((dog) => <DogTableRow dog={dog} />)}
+	</tbody>
+</table>
