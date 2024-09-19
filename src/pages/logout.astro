@@ -1,0 +1,13 @@
+---
+//context.locals.runtime.ctx.waitUntil(fetch(""))
+
+try {
+	Astro.cookies.delete("AWSALB");
+	Astro.cookies.delete("AWSALBCORS");
+	Astro.cookies.delete("fetch-access-token");
+} catch (error) {
+	console.error("failed to delete cookies --- are they there?");
+}
+
+return Astro.redirect("/");
+---
