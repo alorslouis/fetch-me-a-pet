@@ -1,6 +1,7 @@
 import type { Dog } from "@typedef/apiTypes";
-import { atom } from "nanostores";
+import { atom, map } from "nanostores";
 import { z } from "zod";
 
-export const dogFavorites = atom<Dog | null>(null);
+export const $dogFavorites = map<Record<string, Dog | null>>({});
 
+$dogFavorites.subscribe(x => console.log({ x }))
