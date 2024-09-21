@@ -1,6 +1,12 @@
 ---
-import Layout from "../layouts/Layout.astro";
-import { authLoginParser } from "../appTypes/apiTypes.ts";
+import Layout from "@layouts/Layout.astro";
+import {
+	authCookieParser,
+	authLoginParser,
+	type AuthCookie,
+} from "../appTypes/apiTypes";
+import { z, type ZodError } from "zod";
+import { userStore } from "src/store/user";
 
 if (Astro.request.method === "POST") {
 	const formData = await Astro.request.formData();
@@ -17,39 +23,162 @@ if (Astro.request.method === "POST") {
 				method: "POST",
 				headers: {
 					"Content-Type": "application/json",
+					Accept: "*/*",
+					"Accept-Encoding": "gzip, deflate, br",
+					Connection: "keep-alive",
 				},
 				body: JSON.stringify(parsedFormData.data),
 				redirect: "follow",
 			},
 		);
 
+		console.log({ postLogin });
+		console.log({
+			postLoginResponse: postLogin.status,
+			postLogintext: postLogin.statusText,
+		});
+
 		if (!postLogin.ok) {
 			console.log({ postLogin });
-			throw new Error("login failed");
+			//throw new Error("login failed");
 		}
 
-		console.log({ cookies: postLogin.headers });
+		// NOTE: yes, we could just use a package like set-cookie-parser
+		// but this is fun!
+		//
+		const cookies = postLogin.headers.getSetCookie();
+
+		const envLocationVar =
+			Astro?.locals?.runtime?.env?.PROD_ENVIRONMENT ??
+			"local";
+
+		const envLocation = z
+			.enum(["local", "prod", "preview"])
+			.parse(envLocationVar);
+
+		const cookiesFormatted = cookies.map((cookie) => {
+			// INFO: get each k-v
+			// if length === 1, use as bool
+			const cookieSplit = cookie.split(";");
+
+			const equalsSplit = cookieSplit.map((split, index) => {
+				const equalSplit = split
+					.split("=")
+					.map((x, subI) => {
+						// WARN: cookie names are casesense, so we'll preserve those (they come first)
+						// else trim and lowercase for comparison (nice gotcha :D)
+						if (subI === 0 && index !== 0) {
+							return x
+								.trim()
+								.toLowerCase();
+						}
+						return x.trim();
+					});
+
+				console.log({ equalSplit });
+				return equalSplit;
+			});
+
+			const expires = equalsSplit?.find(
+				(x) => x[0] === "expires",
+			);
+
+			const sameSite = equalsSplit?.find(
+				(x) => x[0] === "samesite",
+			);
+
+			const path = equalsSplit?.find((x) => x[0] === "path");
+
+			const httpOnly = equalsSplit?.find(
+				(x) => x[0] === "httponly",
+			);
+
+			const secure = equalsSplit?.find(
+				(x) => x[0] === "secure",
+			);
+
+			const sameSiteParser = authCookieParser.pick({
+				sameSite: true,
+			});
+
+			const sameSiteVal =
+				sameSite?.length && sameSite?.length > 1
+					? sameSiteParser.parse({
+							sameSite: sameSite[1].toLowerCase(),
+						})
+					: undefined;
+
+			const isLocal = envLocation === "local";
+
+			const returnedCookieObject: AuthCookie = {
+				cookieName: equalsSplit[0][0],
+				cookieValue: equalsSplit[0][1],
+				expires: expires
+					? new Date(expires[1])
+					: undefined,
+				sameSite: sameSiteVal?.sameSite ?? undefined,
+				path: path ? path[1] : undefined,
+				httpOnly: httpOnly ? true : false,
+				secure: secure && !isLocal ? true : false,
+			};
+
+			console.log({ cookieSplit });
+			console.log({ returnedCookieObject });
+			return returnedCookieObject;
+		});
+
+		console.log({ cookiesA: cookies });
+		console.log({ cookiesF: cookiesFormatted });
+
+		for (const cookie of cookiesFormatted) {
+			const { cookieName, cookieValue, ...optionals } =
+				cookie;
+
+			console.log({ cookie });
+			if (cookie.cookieName === "fetch-access-token") {
+				try {
+					Astro.cookies.set(
+						cookieName,
+						cookieValue,
+						{
+							...optionals,
+						},
+					);
+				} catch (error) {
+					console.error(error);
+				}
+			}
+		}
+
+		userStore.set(parsedFormData.data);
+
+		return Astro.redirect("/");
 	}
 }
 ---
 
 <Layout title="please login">
 	<div>login</div>
-	<form class="flex flex-col gap-2 w-fit mx-auto my-auto" method="post">
+	<form class="flex flex-col w-fit mx-auto my-auto" method="post">
 		<input
 			type="text"
 			name="name"
 			required
-			placeholder="username"
-			class="bg-transparent rounded-lg border border-white text-center"
+			placeholder={"username"}
+			class="bg-transparent rounded-t-lg border border-white/20 text-center p-2"
 		/>
 		<input
 			type="text"
 			name="email"
 			required
 			placeholder="email"
-			class="bg-transparent rounded-lg border border-white text-center"
+			class="bg-transparent border-x border-white/20 text-center p-2"
 		/>
-		<button type="submit"> login </button>
+		<button
+			type="submit"
+			class="bg-white hover:bg-white/60 text-black rounded-b-lg border border-white/20 text-center p-2"
+		>
+			login
+		</button>
 	</form>
 </Layout>
