@@ -10,10 +10,11 @@
       "@components/*": ["src/components/*"],
       "@partials/*": ["src/pages/partials/*"],
       "@typedef/*": ["src/appTypes/*"],
+      "@stores/*": ["src/store/*"],
       "@pages/*": ["src/pages/*"],
       "@api/*": ["src/pages/api/*"],
       "@db/*": ["db/*"],
-      "@utils/*": ["utils/*"],
+      "@utils/*": ["src/utils/*"],
       "@layouts/*": ["src/layouts/*"]
     }
   }
