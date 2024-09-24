@@ -1,0 +1,6 @@
+{
+  "routesDirectory": "./src/react/routes",
+  "generatedRouteTree": "./src/react/routeTree.gen.ts",
+  "routeFileIgnorePrefix": "-",
+  "quoteStyle": "double"
+}

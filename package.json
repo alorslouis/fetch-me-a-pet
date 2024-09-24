@@ -13,27 +13,32 @@
   },
   "dependencies": {
     "@astrojs/check": "^0.9.3",
-    "@astrojs/cloudflare": "^11.0.5",
+    "@astrojs/cloudflare": "^11.1.0",
     "@astrojs/react": "^3.6.2",
     "@astrojs/tailwind": "^5.1.1",
-    "@faker-js/faker": "^9.0.1",
+    "@faker-js/faker": "^9.0.2",
+    "@nanostores/query": "^0.3.4",
     "@nanostores/react": "^0.7.3",
-    "@types/react": "^18.3.8",
+    "@tanstack/react-router": "^1.58.7",
+    "@tanstack/router-vite-plugin": "^1.58.4",
+    "@types/react": "^18.3.9",
     "@types/react-dom": "^18.3.0",
-    "astro": "^4.15.8",
+    "astro": "^4.15.9",
     "htmx.org": "^1.9.12",
+    "nanoid": "^5.0.7",
     "nanostores": "^0.11.3",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
-    "tailwindcss": "^3.4.12",
+    "tailwindcss": "^3.4.13",
     "typescript": "^5.6.2",
     "zod": "^3.23.8"
   },
   "devDependencies": {
     "@cloudflare/workers-types": "^4.20240919.0",
     "@tailwindcss/forms": "^0.5.9",
+    "@tanstack/router-cli": "^1.58.1",
     "prettier": "^3.3.3",
     "prettier-plugin-astro": "^0.14.1",
-    "wrangler": "^3.78.7"
+    "wrangler": "^3.78.8"
   }
 }

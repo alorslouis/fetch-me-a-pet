@@ -1,7 +1,6 @@
 import { defineConfig } from "astro/config";
-
+import { TanStackRouterVite } from "@tanstack/router-vite-plugin";
 import cloudflare from "@astrojs/cloudflare";
-
 import tailwind from "@astrojs/tailwind";
 import react from "@astrojs/react";
 
@@ -17,4 +16,7 @@ export default defineConfig({
     },
   }),
   integrations: [tailwind(), react()],
+  vite: {
+    plugins: [TanStackRouterVite()],
+  },
 });
