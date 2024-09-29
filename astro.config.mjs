@@ -15,7 +15,12 @@ export default defineConfig({
       enabled: true,
     },
   }),
-  integrations: [tailwind(), react()],
+  integrations: [
+    tailwind(),
+    react({
+      include: ["**/react/*"],
+    }),
+  ],
   vite: {
     plugins: [TanStackRouterVite()],
   },

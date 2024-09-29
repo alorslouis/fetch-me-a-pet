@@ -16,12 +16,11 @@
     "@astrojs/cloudflare": "^11.1.0",
     "@astrojs/react": "^3.6.2",
     "@astrojs/tailwind": "^5.1.1",
-    "@faker-js/faker": "^9.0.2",
     "@nanostores/query": "^0.3.4",
     "@nanostores/react": "^0.7.3",
-    "@tanstack/react-router": "^1.58.7",
-    "@tanstack/router-vite-plugin": "^1.58.4",
-    "@types/react": "^18.3.9",
+    "@tanstack/react-router": "^1.58.12",
+    "@tanstack/router-vite-plugin": "^1.58.12",
+    "@types/react": "^18.3.10",
     "@types/react-dom": "^18.3.0",
     "astro": "^4.15.9",
     "htmx.org": "^1.9.12",
@@ -34,11 +33,11 @@
     "zod": "^3.23.8"
   },
   "devDependencies": {
-    "@cloudflare/workers-types": "^4.20240919.0",
+    "@cloudflare/workers-types": "^4.20240925.0",
     "@tailwindcss/forms": "^0.5.9",
-    "@tanstack/router-cli": "^1.58.1",
+    "@tanstack/router-cli": "^1.58.12",
     "prettier": "^3.3.3",
     "prettier-plugin-astro": "^0.14.1",
-    "wrangler": "^3.78.8"
+    "wrangler": "^3.78.12"
   }
 }
