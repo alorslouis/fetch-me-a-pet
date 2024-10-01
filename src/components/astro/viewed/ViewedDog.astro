@@ -1,0 +1,39 @@
+---
+import { Image } from "astro:assets";
+import type { ViewedKvMetadata } from "@typedef/apiTypes";
+
+interface Props {
+	viewedDog: ViewedKvMetadata;
+}
+
+const { viewedDog } = Astro.props;
+const { img, name, breed, age, zip_code, id } = viewedDog;
+---
+
+<div
+	class="flex justify-stretch rounded-lg bg-white/10 backdrop-blur-2xl w-full items-center h-24 animate-fadeIn hover:scale-[1.03] transition-all duration-150"
+>
+	<a href={`/dogs/${id}`} class="flex-shrink-0 w-16 h-16 sm:w-24 sm:h-24">
+		<Image
+			src={img}
+			alt={`picture of ${name}, a ${breed}`}
+			height={100}
+			width={100}
+			class="rounded-l-lg w-full h-full object-cover"
+		/>
+	</a>
+	<a
+		class="grid grid-cols-2 gap-2 px-4 py-2 flex-grow items-center"
+		href={`/dogs/${id}`}
+	>
+		<p class="text-xl font-bold">
+			{name}
+		</p>
+		<p class="font-semibold">
+			{age}
+			<span class="text-xs italic font-normal">y.o.</span>
+		</p>
+		<p class="italic text-sm">{breed}</p>
+		<p class="text-sm">{zip_code}</p>
+	</a>
+</div>

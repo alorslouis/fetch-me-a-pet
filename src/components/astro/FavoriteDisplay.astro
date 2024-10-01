@@ -1,36 +1,93 @@
 ---
-import type { Dog } from "@typedef/apiTypes";
-import { Image } from "astro:assets";
-
-import { faker } from "@faker-js/faker";
 import { $dogFavorites } from "src/store/favorites";
 import FavoriteDog from "./FavoriteDog.astro";
 
-const dummyDogs: Dog[] = Array.from({ length: 5 }).map((_, i) => {
-	return {
-		img: `https://loremflickr.com/320/240/dog?random=${i}`,
-		id: i.toString(),
-		name: faker.person.firstName(),
-		breed: faker.person.lastName(),
-		age: Math.round(Math.random() * 10),
-		zip_code: faker.location.zipCode(),
-	};
-});
-
-interface Props {
-	dogs?: Dog;
-}
 const favorites = $dogFavorites.get();
 console.log({ favorites });
 
-const { dogs } = Astro.props;
+const favoriteDogs = Object.values(favorites).filter((x) => x !== null);
 ---
 
 <div class="flex flex-col gap-2">
-	<h2 class="text-start font-bold text-xl">my selected dogs</h2>
-	{
-		Object.values(favorites)
-			?.filter((x) => x)
-			.map((dog) => <FavoriteDog dog={dog} />)
-	}
+	<details id="favesDisplayDetailsEl">
+		<summary class="text-start font-bold text-xl">
+			favorite dogs
+		</summary>
+		<div
+			id="favoriteDogsDisplay"
+			class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-1 gap-2 my-4"
+		>
+			{
+				favoriteDogs?.map((dog) =>
+					dog ? <FavoriteDog dog={dog} /> : null,
+				)
+			}
+		</div>
+		<a
+			href="/matches/generate"
+			class="flex w-fit px-6 mx-auto text-center border rounded-lg justify-center py-4 transition-opacity opacity-30 pointer-events-none"
+			id="generateMatchButton"
+		>
+			generate match
+		</a>
+	</details>
 </div>
+
+<script>
+	const dogsDisplay = document.getElementById(
+		"favoriteDogsDisplay",
+	) as HTMLDivElement | null;
+	const generateMatchButton = document.getElementById(
+		"generateMatchButton",
+	) as HTMLAnchorElement | null;
+
+	const detailsElement = document.getElementById(
+		"favesDisplayDetailsEl",
+	) as HTMLDetailsElement | null;
+
+	function updateButtonState() {
+		if (dogsDisplay && generateMatchButton && detailsElement) {
+			const hasNonEmptyChildren = Array.from(
+				dogsDisplay.children,
+			).some(
+				(child) =>
+					(child.textContent?.trim() ?? "") !==
+					"",
+			);
+			if (hasNonEmptyChildren) {
+				generateMatchButton.classList.remove(
+					"opacity-30",
+				);
+				generateMatchButton.classList.remove(
+					"pointer-events-none",
+				);
+
+				if (detailsElement.hasAttribute("open")) {
+				} else {
+					detailsElement.setAttribute("open", "");
+				}
+			} else {
+				generateMatchButton.classList.add("opacity-30");
+				generateMatchButton.classList.add(
+					"pointer-events-none",
+				);
+
+				detailsElement.removeAttribute("open");
+			}
+			console.log({ hasNonEmptyChildren });
+		}
+	}
+
+	if (dogsDisplay && generateMatchButton) {
+		updateButtonState();
+
+		const observer = new MutationObserver(() => {
+			updateButtonState();
+		});
+
+		observer.observe(dogsDisplay, {
+			childList: true,
+			subtree: true,
+		});
+	}
+</script>

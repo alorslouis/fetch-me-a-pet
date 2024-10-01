@@ -1,71 +1,536 @@
 ---
-import type { Dog } from "@typedef/apiTypes";
-import { faker } from "@faker-js/faker";
+import {
+	dogSearchFetchParser,
+	dogParser,
+	type DogBreeds,
+	type DogSearchParams,
+} from "@typedef/apiTypes";
+import {
+	sortableSearchKeys,
+	sortDirection,
+	nextSearchParamParser,
+	dogColumns,
+	type DogColumns,
+	type DogWithFavorite,
+} from "@typedef/apiTypes";
+import { $dogFavorites } from "@stores/favorites";
 import DogTableRow from "./DogTableRow.astro";
+import { fetchFetch } from "@utils/fetchFetch";
+import { breedsStore } from "@stores/allBreeds";
+import { searchTermsStore } from "@stores/search";
 
-const dummyDogs: Dog[] = Array.from({ length: 20 }).map((_, i) => {
+const sortFieldOptions = sortableSearchKeys.options;
+const sortDirOptions = sortDirection.options;
+
+const searchTerm = searchTermsStore.get();
+
+interface Props {
+	lockedBreeds?: DogBreeds;
+	partialProps?: DogSearchParams;
+}
+
+const { lockedBreeds, partialProps } = Astro.props;
+
+const [sortField, sortDir] = searchTerm?.sort?.split(":");
+
+const getDogSearch = await fetchFetch(Astro, {
+	path: "/dogs/search",
+	method: "GET",
+	data: { ...searchTerm, ...partialProps },
+});
+
+if (!getDogSearch.ok) throw new Error("failed batch fetch");
+
+const resultJson = await getDogSearch.json();
+
+const getSearchResults = dogSearchFetchParser.parse(resultJson);
+const dogIds = getSearchResults.resultIds;
+const { next, total } = getSearchResults;
+
+console.log({ next, total });
+
+// NOTE: this is pure convenience
+// grabbing `from` out of the returned `next`
+const parseNextParams = (next: string) => {
+	const dummyUrl = new URL(Astro.url);
+
+	const [pathname, search] = next.split("?");
+
+	dummyUrl.pathname = pathname;
+	dummyUrl.search = search ? `?${search}` : "";
+
+	const sParams = dummyUrl.searchParams;
+	console.log({ t: dummyUrl.href });
+
+	const sParamsObject = Object.fromEntries(sParams);
+
+	return nextSearchParamParser.parse(sParamsObject);
+};
+
+const { from } = parseNextParams(next);
+
+const pageSizeOptions = [10, 25, 50, 75, 100] as const;
+
+const pageSize = searchTerm?.size ?? 25;
+
+const controlledFrom = (direction: "forwards" | "back") => {
+	if (direction === "forwards") {
+		return from >= total ? 0 : from;
+	} else {
+		return from - pageSize === 0
+			? total - pageSize
+			: from - pageSize * 2;
+	}
+};
+
+const endCursor = from;
+const startCursor = from - pageSize;
+
+console.log({ next });
+
+const getDog = await fetchFetch(Astro, {
+	path: "/dogs",
+	method: "POST",
+	data: dogIds,
+});
+
+if (!getDog.ok) throw new Error(`failed fetching dogs`);
+
+const dogs = dogParser.array().parse(await getDog.json());
+
+console.log({ fetchJSON: dogIds });
+
+const rootUrl = new URL(Astro.url);
+
+// INFO: really, we only need to fetch this once
+// so we do that in middleware, then store in local state
+const breeds = breedsStore.get();
+
+// INFO: helper for when viewing single breed
+// will narrow to single breed if lockedBreeds is passed
+// else full array
+const breedsNarrowed = lockedBreeds
+	? breeds?.filter((x) => lockedBreeds.includes(x))
+	: breeds;
+
+const favorites = $dogFavorites.get();
+
+// INFO: favorites are stored in nanostore
+// init from KV on signin
+//
+const dogsPlusIsFave: DogWithFavorite[] = dogs.map((dog) => {
+	const exists = favorites[dog.id];
 	return {
-		img: `https://loremflickr.com/320/240/dog?random=${i}`,
-		id: (i + 1).toString(),
-		name: faker.person.firstName(),
-		breed: faker.person.lastName(),
-		age: Math.round(Math.random() * 10),
-		zip_code: faker.location.zipCode(),
+		...dog,
+		isFavorite: exists ? true : false,
 	};
 });
 
-const fetchUrl = new URL("https://frontend-take-home-service.fetch.com");
+const dogColumnValues: DogColumns[] = Object.values(dogColumns.Values);
 
-fetchUrl.pathname = "dogs/search";
+const formatColNames = (colKey: DogColumns) => {
+	if (colKey === "img" || colKey === "isFavorite") {
+		return "";
+	} else if (colKey === "zip_code") {
+		return colKey.split("_")[0];
+	} else return colKey;
+};
 
-console.log(fetchUrl.href);
-
-console.log({ cookies: Astro.cookies.get("fetch-access-token") });
-//const testFetch = console.log(
-//	fetch(fetchUrl.href, {
-//		method: "GET",
-//		headers: {
-//			"Content-Type": "application/json",
-//			Cookie: "fetch-access-token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJuYW1lIjoidGVzdHkgdGVzdGVyc29uIiwiZW1haWwiOiJ0ZXN0QHRlc3R5dGVzdC5jb20iLCJpYXQiOjE3MjY3NzE5MDQsImV4cCI6MTcyNjc3NTUwNH0.jCwtemqEeyhiRdNbh872tUfRliPkZpeAJuYGGy9NeQ4",
-//		},
-//	}),
-//);
-
-const FATTTY = Astro.cookies.get("fetch-access-token");
-console.log({ FATTTY });
-const FAT =
-	"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJuYW1lIjoibGEiLCJlbWFpbCI6ImxhQGxhLmNvbSIsImlhdCI6MTcyNjc4NTEwOCwiZXhwIjoxNzI2Nzg4NzA4fQ.7Tce6K8B_R4tGhSAs1oerlvpAEbuwqtk8-WR7rCaUyk";
-
-const testFetch = await fetch(fetchUrl.href, {
-	method: "GET",
-	headers: {
-		"Content-Type": "application/json",
-		Cookie: `fetch-access-token=${FATTTY?.value}`,
-	},
-	credentials: "include",
-});
-//
-console.log({ testFetch });
-//console.log({ headers: testFetch.headers });
-if (testFetch.ok) {
-	console.log({ fetchJSON: await testFetch.json() });
-}
-
-const headerVals = Object.keys(dummyDogs[0]);
+const headerVals = dogColumnValues.map((k) => formatColNames(k));
 ---
 
-<table class="table table-fixed">
-	<caption class="text-start"> available dogs </caption>
-	<thead>
-		<tr>
+<div class="flex w-full md:grow flex-col mx-auto" id="mainDogTableContainer">
+	<form
+		class="group my-2 border border-white/50 rounded-lg grow htmx-request:!border-green-700 htmx-request:animate-pulse group-has-[:htmx-request]:animate-pulse divide-y divide-white/50"
+		hx-post="/partials/DogTableP"
+		hx-target="#mainDogTableContainer"
+		id="dogTableForm"
+		hx-swap="outerHTML"
+		hx-trigger="change"
+	>
+		{
+			lockedBreeds
+				? lockedBreeds.map((x) => (
+						<input
+							type="hidden"
+							value={x}
+							name="lockedBreeds"
+						/>
+					))
+				: null
+		}
+		<div class="flex flex-col md:flex-row">
 			{
-				headerVals.map((hVal) => (
-					<td class="text-center">{hVal}</td>
-				))
+				breedsNarrowed ? (
+					<div class="flex flex-col text-center">
+						<label
+							for="breeds"
+							class="pt-2 text-sm font-bold italic"
+						>
+							breeds
+						</label>
+						<select
+							class="bg-transparent rounded-tl-lg border-0 flex flex-col grow"
+							multiple
+							name="breeds"
+						>
+							{breedsNarrowed.map(
+								(breed) => (
+									<option
+										value={
+											breed
+										}
+										selected={searchTerm?.breeds?.includes(
+											breed,
+										)}
+									>
+										{
+											breed
+										}
+									</option>
+								),
+							)}
+						</select>
+					</div>
+				) : null
 			}
-		</tr>
-	</thead>
-	<tbody class="group">
-		{dummyDogs.map((dog) => <DogTableRow dog={dog} />)}
-	</tbody>
-</table>
+
+			<div
+				class="flex flex-col lg:flex-row grow border-t md:border-t-0 md:border-l border-white/50"
+			>
+				<div
+					class="flex flex-col h-full grow rounded-tr-lg opacity-50"
+				>
+					<p
+						class="text-center italic flex items-center justify-center h-full"
+					>
+						sort by
+					</p>
+					<div
+						class="flex grow md:border-b lg:border-b-0"
+					>
+						<select
+							class="bg-transparent border-0 flex grow"
+							name="sortOption"
+						>
+							{
+								sortFieldOptions.map(
+									(
+										sortOption,
+									) => (
+										<option
+											value={
+												sortOption
+											}
+											selected={
+												sortOption ===
+												sortField
+											}
+										>
+											{
+												sortOption
+											}
+										</option>
+									),
+								)
+							}
+						</select>
+						<select
+							class="bg-transparent flex grow border-0"
+							name="sortDir"
+						>
+							{
+								sortDirOptions.map(
+									(
+										dir,
+									) => (
+										<option
+											value={
+												dir
+											}
+											selected={
+												dir ===
+												sortDir
+											}
+										>
+											{
+												dir
+											}
+										</option>
+									),
+								)
+							}
+						</select>
+					</div>
+				</div>
+				<div
+					class="flex flex-col gap-2 items-center justify-center py-2 border-white/50 border-t md:border-t-0 lg:border-l"
+				>
+					<select
+						name="size"
+						class="bg-transparent border-0 text-xs w-full"
+					>
+						{
+							pageSizeOptions.map(
+								(option) => (
+									<option
+										value={
+											option
+										}
+										selected={
+											option ===
+											searchTerm?.size
+										}
+									>
+										{
+											option
+										}
+
+										/
+										page
+									</option>
+								),
+							)
+						}</select
+					>
+					<input
+						type="number"
+						class="bg-transparent w-full border-0"
+						placeholder="minimum age"
+						name="ageMin"
+						min="0"
+						value={searchTerm?.ageMin ??
+							undefined}
+					/>
+					<input
+						type="number"
+						class="bg-transparent w-full border-0"
+						placeholder="maximum age"
+						name="ageMax"
+						min="0"
+						value={searchTerm?.ageMax ??
+							undefined}
+					/>
+				</div>
+			</div>
+		</div>
+		<div
+			class="flex shrink justify-between rounded-b-lg items-center"
+		>
+			<button
+				hx-post={`/partials/DogTableP?from=0`}
+				hx-target="#mainDogTableContainer"
+				hx-swap="outerHTML"
+				hx-include="#dogTableForm"
+				class="p-4 opacity-60 hover:opacity-100 disabled:opacity-30"
+				disabled={from - pageSize === 0}
+			>
+				<svg
+					width="20"
+					height="20"
+					viewBox="0 0 15 15"
+					fill="none"
+					xmlns="http://www.w3.org/2000/svg"
+					><path
+						d="M6.85355 3.85355C7.04882 3.65829 7.04882 3.34171 6.85355 3.14645C6.65829 2.95118 6.34171 2.95118 6.14645 3.14645L2.14645 7.14645C1.95118 7.34171 1.95118 7.65829 2.14645 7.85355L6.14645 11.8536C6.34171 12.0488 6.65829 12.0488 6.85355 11.8536C7.04882 11.6583 7.04882 11.3417 6.85355 11.1464L3.20711 7.5L6.85355 3.85355ZM12.8536 3.85355C13.0488 3.65829 13.0488 3.34171 12.8536 3.14645C12.6583 2.95118 12.3417 2.95118 12.1464 3.14645L8.14645 7.14645C7.95118 7.34171 7.95118 7.65829 8.14645 7.85355L12.1464 11.8536C12.3417 12.0488 12.6583 12.0488 12.8536 11.8536C13.0488 11.6583 13.0488 11.3417 12.8536 11.1464L9.20711 7.5L12.8536 3.85355Z"
+						fill="currentColor"
+						fill-rule="evenodd"
+						clip-rule="evenodd"></path></svg
+				>
+			</button>
+			<button
+				hx-post={`/partials/DogTableP?from=${controlledFrom("back")}`}
+				hx-target="#mainDogTableContainer"
+				hx-swap="outerHTML"
+				hx-include="#dogTableForm"
+				class="p-4 opacity-60 hover:opacity-100"
+			>
+				<svg
+					width="20"
+					height="20"
+					viewBox="0 0 15 15"
+					fill="none"
+					xmlns="http://www.w3.org/2000/svg"
+					><path
+						d="M8.84182 3.13514C9.04327 3.32401 9.05348 3.64042 8.86462 3.84188L5.43521 7.49991L8.86462 11.1579C9.05348 11.3594 9.04327 11.6758 8.84182 11.8647C8.64036 12.0535 8.32394 12.0433 8.13508 11.8419L4.38508 7.84188C4.20477 7.64955 4.20477 7.35027 4.38508 7.15794L8.13508 3.15794C8.32394 2.95648 8.64036 2.94628 8.84182 3.13514Z"
+						fill="currentColor"
+						fill-rule="evenodd"
+						clip-rule="evenodd"></path></svg
+				>
+			</button>
+			<p class="text-xs md:text-base">
+				{(startCursor + 1).toLocaleString()}
+				<span class="text-sm"> to </span>
+				{
+					endCursor > total
+						? total.toLocaleString()
+						: endCursor.toLocaleString()
+				}
+				<span class="text-sm"> of </span>
+
+				{total.toLocaleString()}
+			</p>
+			<button
+				hx-post={`/partials/DogTableP?from=${controlledFrom("forwards")}`}
+				hx-target="#mainDogTableContainer"
+				hx-swap="outerHTML"
+				hx-include="#dogTableForm"
+				class="p-4 opacity-60 hover:opacity-100"
+			>
+				<svg
+					width="20"
+					height="20"
+					viewBox="0 0 15 15"
+					fill="none"
+					xmlns="http://www.w3.org/2000/svg"
+					><path
+						d="M6.1584 3.13508C6.35985 2.94621 6.67627 2.95642 6.86514 3.15788L10.6151 7.15788C10.7954 7.3502 10.7954 7.64949 10.6151 7.84182L6.86514 11.8418C6.67627 12.0433 6.35985 12.0535 6.1584 11.8646C5.95694 11.6757 5.94673 11.3593 6.1356 11.1579L9.565 7.49985L6.1356 3.84182C5.94673 3.64036 5.95694 3.32394 6.1584 3.13508Z"
+						fill="currentColor"
+						fill-rule="evenodd"
+						clip-rule="evenodd"></path></svg
+				>
+			</button>
+			<button
+				hx-post={`/partials/DogTableP?from=${total - pageSize}`}
+				hx-target="#mainDogTableContainer"
+				hx-swap="outerHTML"
+				hx-include="#dogTableForm"
+				class="p-4 opacity-60 hover:opacity-100"
+			>
+				<svg
+					width="20"
+					height="20"
+					viewBox="0 0 15 15"
+					fill="none"
+					xmlns="http://www.w3.org/2000/svg"
+					><path
+						d="M2.14645 11.1464C1.95118 11.3417 1.95118 11.6583 2.14645 11.8536C2.34171 12.0488 2.65829 12.0488 2.85355 11.8536L6.85355 7.85355C7.04882 7.65829 7.04882 7.34171 6.85355 7.14645L2.85355 3.14645C2.65829 2.95118 2.34171 2.95118 2.14645 3.14645C1.95118 3.34171 1.95118 3.65829 2.14645 3.85355L5.79289 7.5L2.14645 11.1464ZM8.14645 11.1464C7.95118 11.3417 7.95118 11.6583 8.14645 11.8536C8.34171 12.0488 8.65829 12.0488 8.85355 11.8536L12.8536 7.85355C13.0488 7.65829 13.0488 7.34171 12.8536 7.14645L8.85355 3.14645C8.65829 2.95118 8.34171 2.95118 8.14645 3.14645C7.95118 3.34171 7.95118 3.65829 8.14645 3.85355L11.7929 7.5L8.14645 11.1464Z"
+						fill="currentColor"
+						fill-rule="evenodd"
+						clip-rule="evenodd"></path></svg
+				>
+			</button>
+		</div>
+	</form>
+	<div class="border rounded-lg rounded-b-none p-4 min-h-[50dvh]">
+		<table
+			class="table table-auto md:table-fixed container items-center mx-auto"
+		>
+			<thead>
+				<tr>
+					{
+						headerVals.map((hVal) => (
+							<th class="text-center capitalize font-bold text-lg">
+								{hVal}
+							</th>
+						))
+					}
+				</tr>
+			</thead>
+			<tbody class="group">
+				{
+					dogsPlusIsFave.map((dog) => (
+						<DogTableRow dog={dog} />
+					))
+				}
+			</tbody>
+		</table>
+	</div>
+	<div
+		class="flex shrink justify-between rounded-b-lg items-center border border-t-0"
+	>
+		<button
+			hx-post={`/partials/DogTableP?from=0`}
+			hx-target="#mainDogTableContainer"
+			hx-swap="outerHTML"
+			hx-include="#dogTableForm"
+			class="p-4 opacity-60 hover:opacity-100 disabled:opacity-30"
+			disabled={from - pageSize === 0}
+		>
+			<svg
+				width="20"
+				height="20"
+				viewBox="0 0 15 15"
+				fill="none"
+				xmlns="http://www.w3.org/2000/svg"
+				><path
+					d="M6.85355 3.85355C7.04882 3.65829 7.04882 3.34171 6.85355 3.14645C6.65829 2.95118 6.34171 2.95118 6.14645 3.14645L2.14645 7.14645C1.95118 7.34171 1.95118 7.65829 2.14645 7.85355L6.14645 11.8536C6.34171 12.0488 6.65829 12.0488 6.85355 11.8536C7.04882 11.6583 7.04882 11.3417 6.85355 11.1464L3.20711 7.5L6.85355 3.85355ZM12.8536 3.85355C13.0488 3.65829 13.0488 3.34171 12.8536 3.14645C12.6583 2.95118 12.3417 2.95118 12.1464 3.14645L8.14645 7.14645C7.95118 7.34171 7.95118 7.65829 8.14645 7.85355L12.1464 11.8536C12.3417 12.0488 12.6583 12.0488 12.8536 11.8536C13.0488 11.6583 13.0488 11.3417 12.8536 11.1464L9.20711 7.5L12.8536 3.85355Z"
+					fill="currentColor"
+					fill-rule="evenodd"
+					clip-rule="evenodd"></path></svg
+			>
+		</button>
+		<button
+			hx-post={`/partials/DogTableP?from=${controlledFrom("back")}`}
+			hx-target="#mainDogTableContainer"
+			hx-swap="outerHTML"
+			hx-include="#dogTableForm"
+			class="p-4 opacity-60 hover:opacity-100"
+		>
+			<svg
+				width="20"
+				height="20"
+				viewBox="0 0 15 15"
+				fill="none"
+				xmlns="http://www.w3.org/2000/svg"
+				><path
+					d="M8.84182 3.13514C9.04327 3.32401 9.05348 3.64042 8.86462 3.84188L5.43521 7.49991L8.86462 11.1579C9.05348 11.3594 9.04327 11.6758 8.84182 11.8647C8.64036 12.0535 8.32394 12.0433 8.13508 11.8419L4.38508 7.84188C4.20477 7.64955 4.20477 7.35027 4.38508 7.15794L8.13508 3.15794C8.32394 2.95648 8.64036 2.94628 8.84182 3.13514Z"
+					fill="currentColor"
+					fill-rule="evenodd"
+					clip-rule="evenodd"></path></svg
+			>
+		</button>
+		<p class="text-xs md:text-base">
+			{(startCursor + 1).toLocaleString()}
+			<span class="text-xs md:text-base"> to </span>
+			{
+				endCursor > total
+					? total.toLocaleString()
+					: endCursor.toLocaleString()
+			}
+			<span class=""> of </span>
+
+			{total.toLocaleString()}
+		</p>
+		<button
+			hx-post={`/partials/DogTableP?from=${controlledFrom("forwards")}`}
+			hx-target="#mainDogTableContainer"
+			hx-swap="outerHTML"
+			hx-include="#dogTableForm"
+			class="p-4 opacity-60 hover:opacity-100"
+		>
+			<svg
+				width="20"
+				height="20"
+				viewBox="0 0 15 15"
+				fill="none"
+				xmlns="http://www.w3.org/2000/svg"
+				><path
+					d="M6.1584 3.13508C6.35985 2.94621 6.67627 2.95642 6.86514 3.15788L10.6151 7.15788C10.7954 7.3502 10.7954 7.64949 10.6151 7.84182L6.86514 11.8418C6.67627 12.0433 6.35985 12.0535 6.1584 11.8646C5.95694 11.6757 5.94673 11.3593 6.1356 11.1579L9.565 7.49985L6.1356 3.84182C5.94673 3.64036 5.95694 3.32394 6.1584 3.13508Z"
+					fill="currentColor"
+					fill-rule="evenodd"
+					clip-rule="evenodd"></path></svg
+			>
+		</button>
+		<button
+			hx-post={`/partials/DogTableP?from=${total - pageSize}`}
+			hx-target="#mainDogTableContainer"
+			hx-swap="outerHTML"
+			hx-include="#dogTableForm"
+			class="p-4 opacity-60 hover:opacity-100"
+		>
+			<svg
+				width="20"
+				height="20"
+				viewBox="0 0 15 15"
+				fill="none"
+				xmlns="http://www.w3.org/2000/svg"
+				><path
+					d="M2.14645 11.1464C1.95118 11.3417 1.95118 11.6583 2.14645 11.8536C2.34171 12.0488 2.65829 12.0488 2.85355 11.8536L6.85355 7.85355C7.04882 7.65829 7.04882 7.34171 6.85355 7.14645L2.85355 3.14645C2.65829 2.95118 2.34171 2.95118 2.14645 3.14645C1.95118 3.34171 1.95118 3.65829 2.14645 3.85355L5.79289 7.5L2.14645 11.1464ZM8.14645 11.1464C7.95118 11.3417 7.95118 11.6583 8.14645 11.8536C8.34171 12.0488 8.65829 12.0488 8.85355 11.8536L12.8536 7.85355C13.0488 7.65829 13.0488 7.34171 12.8536 7.14645L8.85355 3.14645C8.65829 2.95118 8.34171 2.95118 8.14645 3.14645C7.95118 3.34171 7.95118 3.65829 8.14645 3.85355L11.7929 7.5L8.14645 11.1464Z"
+					fill="currentColor"
+					fill-rule="evenodd"
+					clip-rule="evenodd"></path></svg
+			>
+		</button>
+	</div>
+</div>

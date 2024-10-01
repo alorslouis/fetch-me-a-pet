@@ -1,0 +1,90 @@
+---
+import type { Dog, DogWithFavorite } from "@typedef/apiTypes";
+import { actions } from "astro:actions";
+import FavoriteButton from "./FavoriteButton.astro";
+import { $dogFavorites } from "@stores/favorites";
+import { Image } from "astro:assets";
+
+interface Props {
+	dog: Dog;
+	canFavorite?: boolean;
+}
+
+const { dog, canFavorite } = Astro.props;
+
+const { data, error } = await Astro.callAction(actions.geo.uspsZipLookup, {
+	zip: dog.zip_code,
+});
+
+const isFavorite = $dogFavorites.get()[dog.id];
+
+const dogZipUsps = data?.uspsJson;
+---
+
+<div class="flex flex-col mx-auto">
+	<div class="relative">
+		<Image
+			src={dog.img}
+			alt={dog.name}
+			inferSize
+			class={[
+				"rounded-lg object-cover size-96",
+				`${dogZipUsps ? "!rounded-b-none" : ""}`,
+			].join(" ")}
+		/>
+		<div
+			class="flex text-xl font-bold absolute top-0 left-0 p-4 z-10 bg-black/30 backdrop-blur-xl rounded-tl-lg rounded-br-lg items-center"
+		>
+			<h3 class="">
+				{dog.name}
+			</h3>
+		</div>
+		{
+			canFavorite ? (
+				<div class="ml-auto absolute top-0 right-0">
+					<FavoriteButton
+						favoritePartialMethod="faveRow"
+						dog={{
+							...dog,
+							isFavorite: isFavorite
+								? true
+								: false,
+						}}
+					/>
+				</div>
+			) : null
+		}
+		<div
+			class={[
+				"flex flex-col w-full absolute bottom-0  bg-white/20 backdrop-blur-xl p-4 rounded-b-lg",
+				`${dogZipUsps ? "!rounded-none" : ""}`,
+			].join(" ")}
+		>
+			<div class="justify-evenly w-full flex">
+				<a
+					href={`/dogs/breeds/${dog.breed}`}
+					class="italic"
+				>
+					{dog.breed}
+				</a>
+				<p
+					class="after:content-['y.o.'] after:italic after:text-sm after:px-2"
+				>
+					{dog.age}
+				</p>
+				{dogZipUsps ? null : <p>{dog.zip_code}</p>}
+			</div>
+		</div>
+	</div>
+	{
+		dogZipUsps ? (
+			<div class="justify-center w-full flex gap-2 py-2 border border-white/50 rounded-b-lg border-t-0">
+				<p class="capitalize after:content-[',']">
+					{dogZipUsps.defaultCity}
+				</p>
+				<p>{dogZipUsps.defaultState}</p>
+				<p>{dogZipUsps.zip5}</p>
+			</div>
+		) : null
+	}
+</div>

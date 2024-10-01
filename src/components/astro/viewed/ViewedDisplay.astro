@@ -1,0 +1,28 @@
+---
+import { $viewedDog } from "@stores/seenDog";
+import ViewedDog from "./ViewedDog.astro";
+
+const viewedDogsGet = $viewedDog.get();
+
+const viewedDogs = Object.values(viewedDogsGet).filter((x) => x !== null);
+---
+
+<div class="flex flex-col gap-2">
+	<details>
+		<summary class="text-start font-bold text-xl">
+			recently viewed
+		</summary>
+		<div
+			id="matchedDogsDisplay"
+			class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-1 gap-2 my-4"
+		>
+			{
+				viewedDogs?.map((dog) =>
+					dog ? (
+						<ViewedDog viewedDog={dog} />
+					) : null,
+				)
+			}
+		</div>
+	</details>
+</div>

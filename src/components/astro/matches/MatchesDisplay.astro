@@ -1,0 +1,76 @@
+---
+import { $matches } from "@stores/matches";
+import MatchedDog from "./MatchedDog.astro";
+
+const matchedDogsGet = $matches.get();
+
+const matchedDogs = Object.values(matchedDogsGet).filter((x) => x !== null);
+---
+
+<div class="flex flex-col gap-2">
+	<details id="matchesDisplayDetailsEl">
+		<summary class="text-start font-bold text-xl">
+			my matches
+		</summary>
+		<div
+			id="matchedDogsDisplay"
+			class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-1 gap-2 my-4"
+		>
+			{
+				matchedDogs?.map((dog) =>
+					dog ? (
+						<MatchedDog
+							matchedDog={
+								dog.matchedDog
+							}
+						/>
+					) : null,
+				)
+			}
+		</div>
+	</details>
+</div>
+
+<script>
+	const matchedDisplay = document.getElementById(
+		"matchedDogsDisplay",
+	) as HTMLDivElement | null;
+	const detailsElement = document.getElementById(
+		"matchesDisplayDetailsEl",
+	) as HTMLDetailsElement | null;
+
+	function updateDetailsOpenState() {
+		if (matchedDisplay && detailsElement) {
+			const hasNonEmptyChildren = Array.from(
+				matchedDisplay.children,
+			).some(
+				(child) =>
+					(child.textContent?.trim() ?? "") !==
+					"",
+			);
+			if (hasNonEmptyChildren) {
+				if (detailsElement.hasAttribute("open")) {
+					detailsElement.removeAttribute("open");
+				} else {
+					detailsElement.setAttribute("open", "");
+				}
+			} else {
+				detailsElement.removeAttribute("open");
+			}
+			console.log({ hasNonEmptyChildren });
+		}
+	}
+
+	if (matchedDisplay && detailsElement) {
+		updateDetailsOpenState();
+
+		const observer = new MutationObserver(() => {
+			updateDetailsOpenState();
+		});
+
+		observer.observe(matchedDisplay, {
+			childList: true,
+			subtree: true,
+		});
+	}
+</script>
