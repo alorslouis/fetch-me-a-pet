@@ -1,46 +1,72 @@
-
-import { authLoginParser, formatAuthLoginParser } from '@typedef/apiTypes';
+import { authLoginParser, dogWithFavorite, matchParser } from '@typedef/apiTypes';
 import { ActionError, defineAction } from 'astro:actions';
 import { z } from 'astro:schema';
-
-
-
-
-const kvTypePrefix = z.enum(["fav", "viewed"])
-
-type KvTypePrefix = z.infer<typeof kvTypePrefix>
-
-const kvPathConstructor = (typePrefix: KvTypePrefix, user: AuthLogin, dogId?: string) => {
-
-
-	const userPrefix = formatAuthLoginParser.parse(user)
-
-
-	const pathPrefix = `${typePrefix}:${userPrefix}:`
-
-	if (dogId) {
-		return `${pathPrefix}${z.string().parse(dogId)}`
-	}
-
-	return `${pathPrefix}`
-}
+import { kvPathConstructor } from '@utils/kvPaths';
+import { listKvs } from './listFavoriteKVs';
+import { nanoid } from 'nanoid';
+import { $dogFavorites } from '@stores/favorites';
+import { viewedDog } from './viewedDog';
+import { $matches } from '@stores/matches';
+import { getDogs } from './getDogs';
+import { matches } from './matches';
+import { geo } from './geoLocate';
 
 export const server = {
-	favoriteKVs: defineAction({
+	listKvs,
+	viewedDog,
+	getDogs,
+	matches,
+	geo,
+	putFavoriteKVs: defineAction({
 		input: z.object({
-			action: z.enum(["list", "delete", "get", "put"]),
-			dogId: z.string()
+			dog: dogWithFavorite
 		}),
 		handler: async (input, ctx) => {
-			const { action, dogId } = input
+			const { dog } = input
 
 
-			const userParsed = authLoginParser.safeParse(ctx.locals.userObject)
+			const { userObject } = ctx.locals
+
+
+			const userParsed = await authLoginParser.spa(userObject)
 
 			if (!userParsed.success) {
 				throw new ActionError({
 					code: "UNAUTHORIZED",
-					message: "User must be logged in.",
+					message: `User must be logged in. error: ${JSON.stringify(userParsed)}`,
+				})
+			}
+
+			const kvBinding = ctx.locals.runtime.env.fetchpet_favorites
+
+			const ky = kvPathConstructor("fav", userParsed.data, dog.id)
+
+			await kvBinding.put(ky, JSON.stringify(dog), {
+				metadata: dog
+			})
+
+
+			return { userParsed, dog, ky }
+		}
+	}),
+	deleteKV: defineAction({
+		input: z.object({
+			dogId: z.string()
+		}),
+		handler: async (input, ctx) => {
+			const { dogId } = input
+
+
+			const { userObject } = ctx.locals
+
+			const userParsed = await authLoginParser.spa(userObject)
+
+			if (!userParsed.success) {
+
+				console.log(JSON.stringify({ userParsed }))
+				throw new ActionError({
+					code: "UNAUTHORIZED",
+					message: `User must be logged in. error: ${JSON.stringify(userParsed)}`,
 				})
 			}
 
@@ -48,14 +74,100 @@ export const server = {
 
 			const ky = kvPathConstructor("fav", userParsed.data, dogId)
 
-			//if (action === "put") {
-			//	await kvBinding.put(ky, action)
-			//} else if (action === "delete") {
-			//	await kvBinding.delete(ky)
-			//}
+			await kvBinding.delete(ky)
+
+			//return { userParsed, dog, ky }
+		}
+	}),
+	putMatch: defineAction({
+		input: z.object({
+			matchInfo: matchParser
+		}),
+		handler: async (input, ctx) => {
+			const { matchInfo } = input
+			const { matchedDog, matchInputs } = matchInfo
+
+			const { matchId } = matchedDog
+
+			const { userObject } = ctx.locals
+
+			const userParsed = await authLoginParser.spa(userObject)
+
+			if (!userParsed.success) {
+
+				console.log(JSON.stringify({ userParsed }))
+				throw new ActionError({
+					code: "UNAUTHORIZED",
+					message: `User must be logged in. error: ${JSON.stringify(userParsed)}`,
+				})
+			}
+
+			const kvBinding = ctx.locals.runtime.env.fetchpet_favorites
 
 
-			return { userParsed, dogId, ky }
+			const ky = kvPathConstructor("match", userParsed.data, matchId)
+
+			const prevKvsToDelete = matchInputs.map(x => {
+				const kvPath = kvPathConstructor("fav", userParsed.data, x.id)
+				return kvBinding.delete(kvPath)
+
+			})
+
+
+			// 1. stash the match info
+			// 2. rm the previous favorites (they're now stored on the match KV)
+			try {
+				await Promise.all([kvBinding.put(ky, JSON.stringify(matchInfo), {
+					metadata: matchedDog
+				}),
+				...prevKvsToDelete
+				])
+				$matches.setKey(matchId, matchInfo)
+
+			} catch (error) {
+				throw new ActionError({
+					code: "INTERNAL_SERVER_ERROR",
+					message: `kv put/delete error: ${error}`,
+				})
+
+			}
+
+			return { userParsed, matchId: matchedDog.matchId, ky }
+		}
+	}),
+	listMatches: defineAction({
+		handler: async (_, ctx) => {
+
+
+			const { userObject } = ctx.locals
+
+			const userParsed = await authLoginParser.spa(userObject)
+
+			if (!userParsed.success) {
+
+				console.log(JSON.stringify({ userParsed }))
+				throw new ActionError({
+					code: "UNAUTHORIZED",
+					message: `User must be logged in. error: ${JSON.stringify(userParsed)}`,
+				})
+			}
+
+			const kvBinding = ctx.locals.runtime.env.fetchpet_favorites
+
+			const ky = kvPathConstructor("match", userParsed.data)
+
+			const kvList = await kvBinding.list({
+				prefix: ky
+			})
+
+			// TODO: parse this using the dogParser (!isFavorite needed)
+			const kvMetadataParased = kvList.keys.map(kv => {
+
+			})
+
+
+
+			return { userParsed, kvMetadataParased, ky }
 		}
 	}),
 }
