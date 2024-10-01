@@ -2,6 +2,7 @@
 import { Image } from "astro:assets";
 import HTMXImport from "@components/astro/HTMXImport.astro";
 import FrameworkSelector from "@components/astro/FrameworkSelector.astro";
+import Logo from "../assets/logo.svg";
 
 interface Props {
   title: string;
@@ -14,9 +15,11 @@ const { loggedIn, userObject } = Astro.locals;
 
 const currentUrl = Astro.url;
 
-const frameworkControlledHome = Astro.url.pathname.includes("react")
-  ? "/react"
-  : "/";
+const { pathname } = currentUrl;
+
+const isRoot = pathname === "/" || pathname === "/react";
+
+const frameworkControlledHome = pathname.includes("react") ? "/react" : "/";
 
 const titleConstructor = (t: string) => `${t} // fetch-me-a-pet`;
 ---
@@ -26,9 +29,9 @@ const titleConstructor = (t: string) => `${t} // fetch-me-a-pet`;
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width" />
-    <link rel="icon" type="image/png" href="/favicon.png" />
-    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-    <link rel="apple-touch-icon" href="/favicon.png" />
+    <!--<link rel="icon" type="image/png" href="/favicon.png" />-->
+    <!--<link rel="icon" type="image/svg+xml" href="/favicon.svg" />-->
+    <!--<link rel="apple-touch-icon" href="/favicon.png" />-->
     <meta name="generator" content={Astro.generator} />
     <title>{titleConstructor(title)}</title>
     {isHTMX && <HTMXImport />}
@@ -38,10 +41,14 @@ const titleConstructor = (t: string) => `${t} // fetch-me-a-pet`;
     <header class="flex sticky top-0 backdrop-blur-2xl z-50 rounded-b-lg">
       <a href={frameworkControlledHome} class="p-4">
         <Image
-          src="https://fetch.com/assets/images/graphics/footer-logo.svg"
+          src={Logo}
           height={50}
           width={50}
-          alt={"asd"}
+          alt={"fetch-me-a-pet logo"}
+          class={[
+            "transition-transform",
+            `${isRoot ? "animate-enterIn offset-path-quarter-circle" : ""}`,
+          ].join(" ")}
         />
       </a>
       <div
