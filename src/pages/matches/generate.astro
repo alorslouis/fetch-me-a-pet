@@ -1,6 +1,5 @@
 ---
 import { z } from "zod";
-import Layout from "@layouts/Layout.astro";
 import { $dogFavorites } from "@stores/favorites";
 import { fetchFetch } from "@utils/fetchFetch";
 import { dogParser } from "@typedef/apiTypes";
@@ -10,7 +9,7 @@ import { nanoid } from "nanoid";
 const getFavorites = $dogFavorites.get();
 const favoriteValues = Object.values(getFavorites).filter((x) => x !== null);
 
-console.log({ favoriteValues });
+//console.log({ favoriteValues });
 
 const favorites = favoriteValues.map((x) => x?.id);
 

@@ -1,4 +1,6 @@
-# Astro Starter Kit: Basics
+# Fetch takehome (frontend)
+
+clone
 
 ```sh
 npm create astro@latest -- --template basics

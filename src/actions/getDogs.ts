@@ -130,8 +130,6 @@ export const getDogs = {
 
 			//console.log({ breeds })
 
-
-
 			return { breeds }
 
 		}

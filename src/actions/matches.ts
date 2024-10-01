@@ -98,9 +98,10 @@ export const matches = {
 			});
 
 			if (!getDog.ok) {
-				console.log("getDog failed");
-				console.log(JSON.stringify(getDog));
-				//return Astro.redirect("/matches");
+				throw new ActionError({
+					code: "INTERNAL_SERVER_ERROR",
+					message: `getDog failed: ${JSON.stringify(getDog)}`,
+				})
 			}
 
 			const getDogReturn = await getDog.json();

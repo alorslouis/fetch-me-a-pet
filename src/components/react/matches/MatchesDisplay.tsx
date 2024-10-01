@@ -8,7 +8,7 @@ export default function MatchesDisplay() {
 
 	const matchedDogs = Object.values($dogMatches);
 
-	console.log({ matchedDogs })
+	//console.log({ matchedDogs })
 
 	return (
 		<div className="flex flex-col gap-2">

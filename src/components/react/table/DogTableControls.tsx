@@ -5,7 +5,6 @@ import { searchTermsStore } from "@stores/search"
 import { sortableSearchKeys, sortDirection, sortSchema } from "@typedef/apiTypes"
 import DogTablePagination from "./DogTablePaginationControls"
 import { tableLoadingState } from "@stores/reactLoadingState"
-import { actions } from "astro:actions"
 import { geo } from "@stores/geoLocate"
 
 interface DogTableControls {
@@ -34,7 +33,7 @@ export default function DogTableControls({ lockedBreeds }: DogTableControls) {
 	const [sortField, sortDir] = $searchParams.sort?.split(":");
 
 	const pageSizeOptions = [10, 25, 50, 75, 100] as const;
-	console.log({ searchParams: $searchParams })
+	//console.log({ searchParams: $searchParams })
 	return (
 		<form
 			className={["my-2 border border-white/50 rounded-lg grow divide-y divide-white/50", `${$loadingState ? "!border-green-500 animate-pulse" : null}`].join(" ")}

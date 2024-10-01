@@ -17,7 +17,7 @@ const reqUrl = Astro.url;
 
 const formData = await Astro.request.formData();
 
-console.log({ formData });
+//console.log({ formData });
 
 const formDataEntries: any = {};
 
@@ -43,7 +43,7 @@ for (const [key, value] of formData.entries()) {
 const sortOption = sortableSearchKeys.parse(formDataEntries["sortOption"]);
 const sortDir = sortDirection.parse(formDataEntries["sortDir"]);
 
-console.log({ sortOption, sortDir });
+//console.log({ sortOption, sortDir });
 
 const searchParamsObj = nextSearchParamParser.safeParse(
 	Object.fromEntries(reqUrl.searchParams),
@@ -51,9 +51,9 @@ const searchParamsObj = nextSearchParamParser.safeParse(
 
 const formParse = dogSearchParams.safeParse(formDataEntries);
 
-console.log(JSON.stringify(formParse));
-
-console.log({ formDataEntries, searchParamsObj });
+//console.log(JSON.stringify(formParse));
+//
+//console.log({ formDataEntries, searchParamsObj });
 
 const combinedSort = `${sortOption}:${sortDir}`;
 

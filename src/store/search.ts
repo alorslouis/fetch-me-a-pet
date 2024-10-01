@@ -5,7 +5,7 @@ import { geo } from "./geoLocate";
 
 const userGeo = geo.get()?.zip
 
-console.log({ userGeo })
+//console.log({ userGeo })
 
 export const searchTermsStore = atom<DogSearchParams>({
 	sort: "breed:asc",

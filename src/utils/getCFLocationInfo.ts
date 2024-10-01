@@ -1,7 +1,6 @@
 import { cloudflareGeoParser, } from "@typedef/apiTypes";
 import type { APIContext, AstroGlobal } from "astro";
 import type { ActionAPIContext } from "astro:actions";
-import { z } from "zod"
 
 export const getCFLocationInfo = (context: AstroGlobal | APIContext | ActionAPIContext) => {
 
@@ -13,7 +12,6 @@ export const getCFLocationInfo = (context: AstroGlobal | APIContext | ActionAPIC
 		zip: context.locals.runtime.cf?.postalCode,
 	})
 
-	console.log(JSON.stringify(cfGeoObject))
 
 	return cfGeoObject?.data ?? null
 }

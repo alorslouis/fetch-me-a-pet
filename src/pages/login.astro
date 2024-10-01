@@ -17,10 +17,10 @@ let loginErrorsArr: ZodIssue[] = [];
 if (Astro.request.method === "POST") {
 	const formData = await Astro.request.formData();
 	const formDataEntries = Object.fromEntries(formData.entries());
-	console.log({ formDataEntries });
+	//console.log({ formDataEntries });
 	const parsedFormData = authLoginParser.safeParse(formDataEntries);
 
-	console.log(JSON.stringify(parsedFormData));
+	//console.log(JSON.stringify(parsedFormData));
 
 	if (parsedFormData.success) {
 		const { data } = parsedFormData;
@@ -42,15 +42,15 @@ if (Astro.request.method === "POST") {
 			},
 		);
 
-		console.log({ postLogin });
-		console.log({
-			postLoginResponse: postLogin.status,
-			postLogintext: postLogin.statusText,
-		});
+		//console.log({ postLogin });
+		//console.log({
+		//	postLoginResponse: postLogin.status,
+		//	postLogintext: postLogin.statusText,
+		//});
 
 		if (!postLogin.ok) {
 			console.log({ postLogin });
-			//throw new Error("login failed");
+			throw new Error("login failed");
 		}
 
 		// NOTE: yes, we could just use a package like set-cookie-parser
@@ -132,13 +132,13 @@ if (Astro.request.method === "POST") {
 				secure: secure && !isLocal ? true : false,
 			};
 
-			console.log({ cookieSplit });
-			console.log({ returnedCookieObject });
+			//console.log({ cookieSplit });
+			//console.log({ returnedCookieObject });
 			return returnedCookieObject;
 		});
 
-		console.log({ cookiesA: cookies });
-		console.log({ cookiesF: cookiesFormatted });
+		//console.log({ cookiesA: cookies });
+		//console.log({ cookiesF: cookiesFormatted });
 
 		// NOTE: we only need the fetch-access-token for this
 		// BUT it's a good pattern so we'll keep for expositional purposes
@@ -146,7 +146,7 @@ if (Astro.request.method === "POST") {
 			const { cookieName, cookieValue, ...optionals } =
 				cookie;
 
-			console.log({ cookie });
+			//console.log({ cookie });
 			if (cookie.cookieName === "fetch-access-token") {
 				try {
 					Astro.cookies.set(

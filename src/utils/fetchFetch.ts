@@ -57,7 +57,6 @@ export const fetchFetch = async (context: AstroGlobal | APIContext | ActionAPICo
 			} else {
 				dataProps?.forEach((x, i) => {
 
-					console.log(k, dataProps)
 					fetchUrl.searchParams.append(`${k}[${i}]`, x)
 				}
 				)

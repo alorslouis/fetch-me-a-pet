@@ -1,12 +1,9 @@
-import DogView from "@components/react/dogs/DogView"
 import GenericDogView from "@components/react/GenericDogView"
 import { DogTable } from "@components/react/table/DogTable"
-import { useStore } from "@nanostores/react"
 import { searchTermsStore } from "@stores/search"
 import { createFileRoute, Link } from "@tanstack/react-router"
 import type { UspsZipLookupParser } from "@typedef/apiTypes"
 import { actions } from "astro:actions"
-import { useEffect } from "react"
 
 export const Route = createFileRoute("/dogs/$dogId")({
   onLeave: async () => {

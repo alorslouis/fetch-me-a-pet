@@ -24,7 +24,7 @@ searchTermsStore.subscribe(async (change) => {
 	}
 
 	if (data?.total) {
-		console.log({ dataTotal: data.total })
+		//console.log({ dataTotal: data.total })
 		searchExtras.set({
 			total: data.total,
 		})

@@ -41,7 +41,6 @@ export const viewedDog = {
 
 			const dateNow = new Date(Date.now())
 
-			console.log({ dateNow })
 			$viewedDog.setKey(dog.id, { ...dog, viewedAt: dateNow })
 		}
 	}),

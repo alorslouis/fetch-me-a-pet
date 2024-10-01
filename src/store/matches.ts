@@ -16,13 +16,11 @@ if (!isServer) {
 
 		fetchMatches();
 
-		//return () => {
-		//};
 	});
 
 	$matches.listen(async (newVal, oldVal, change) => {
-		console.log("running change allX")
-		console.log({ newVal, oldVal, change })
+		//console.log("running change allX")
+		//console.log({ newVal, oldVal, change })
 
 		const changedVal = newVal[change]
 

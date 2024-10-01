@@ -8,7 +8,7 @@ export default function ViewedDisplay() {
 	const viewedDogs = Object.values($viewed)
 		.filter((x) => x !== null).sort((a, b) => b.viewedAt.getTime() - a.viewedAt.getTime());
 
-	console.log({ $viewed })
+	//console.log({ $viewed })
 	return (
 
 		<div className="flex flex-col">

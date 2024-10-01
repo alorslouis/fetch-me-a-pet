@@ -27,7 +27,6 @@ if (!partialMethod.success || !reqFormData)
 
 const f = coercedDogWithFavorite.parse(Object.fromEntries(reqFormData));
 
-console.log({ f });
 
 if (f.isFavorite) {
 	const { data, error } = await Astro.callAction(actions.deleteKV, {
