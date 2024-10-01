@@ -11,18 +11,30 @@
 // Import Routes
 
 import { Route as rootRoute } from "./routes/__root"
-import { Route as ListImport } from "./routes/list"
 import { Route as IndexImport } from "./routes/index"
+import { Route as MatchesMatchIdImport } from "./routes/matches/$matchId"
+import { Route as DogsDogIdImport } from "./routes/dogs/$dogId"
+import { Route as DogsBreedsBreedImport } from "./routes/dogs/breeds/$breed"
 
 // Create/Update Routes
 
-const ListRoute = ListImport.update({
-  path: "/list",
+const IndexRoute = IndexImport.update({
+  path: "/",
   getParentRoute: () => rootRoute,
 } as any)
 
-const IndexRoute = IndexImport.update({
-  path: "/",
+const MatchesMatchIdRoute = MatchesMatchIdImport.update({
+  path: "/matches/$matchId",
+  getParentRoute: () => rootRoute,
+} as any)
+
+const DogsDogIdRoute = DogsDogIdImport.update({
+  path: "/dogs/$dogId",
+  getParentRoute: () => rootRoute,
+} as any)
+
+const DogsBreedsBreedRoute = DogsBreedsBreedImport.update({
+  path: "/dogs/breeds/$breed",
   getParentRoute: () => rootRoute,
 } as any)
 
@@ -37,11 +49,25 @@ declare module "@tanstack/react-router" {
       preLoaderRoute: typeof IndexImport
       parentRoute: typeof rootRoute
     }
-    "/list": {
-      id: "/list"
-      path: "/list"
-      fullPath: "/list"
-      preLoaderRoute: typeof ListImport
+    "/dogs/$dogId": {
+      id: "/dogs/$dogId"
+      path: "/dogs/$dogId"
+      fullPath: "/dogs/$dogId"
+      preLoaderRoute: typeof DogsDogIdImport
+      parentRoute: typeof rootRoute
+    }
+    "/matches/$matchId": {
+      id: "/matches/$matchId"
+      path: "/matches/$matchId"
+      fullPath: "/matches/$matchId"
+      preLoaderRoute: typeof MatchesMatchIdImport
+      parentRoute: typeof rootRoute
+    }
+    "/dogs/breeds/$breed": {
+      id: "/dogs/breeds/$breed"
+      path: "/dogs/breeds/$breed"
+      fullPath: "/dogs/breeds/$breed"
+      preLoaderRoute: typeof DogsBreedsBreedImport
       parentRoute: typeof rootRoute
     }
   }
@@ -51,37 +77,52 @@ declare module "@tanstack/react-router" {
 
 export interface FileRoutesByFullPath {
   "/": typeof IndexRoute
-  "/list": typeof ListRoute
+  "/dogs/$dogId": typeof DogsDogIdRoute
+  "/matches/$matchId": typeof MatchesMatchIdRoute
+  "/dogs/breeds/$breed": typeof DogsBreedsBreedRoute
 }
 
 export interface FileRoutesByTo {
   "/": typeof IndexRoute
-  "/list": typeof ListRoute
+  "/dogs/$dogId": typeof DogsDogIdRoute
+  "/matches/$matchId": typeof MatchesMatchIdRoute
+  "/dogs/breeds/$breed": typeof DogsBreedsBreedRoute
 }
 
 export interface FileRoutesById {
   __root__: typeof rootRoute
   "/": typeof IndexRoute
-  "/list": typeof ListRoute
+  "/dogs/$dogId": typeof DogsDogIdRoute
+  "/matches/$matchId": typeof MatchesMatchIdRoute
+  "/dogs/breeds/$breed": typeof DogsBreedsBreedRoute
 }
 
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: "/" | "/list"
+  fullPaths: "/" | "/dogs/$dogId" | "/matches/$matchId" | "/dogs/breeds/$breed"
   fileRoutesByTo: FileRoutesByTo
-  to: "/" | "/list"
-  id: "__root__" | "/" | "/list"
+  to: "/" | "/dogs/$dogId" | "/matches/$matchId" | "/dogs/breeds/$breed"
+  id:
+    | "__root__"
+    | "/"
+    | "/dogs/$dogId"
+    | "/matches/$matchId"
+    | "/dogs/breeds/$breed"
   fileRoutesById: FileRoutesById
 }
 
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
-  ListRoute: typeof ListRoute
+  DogsDogIdRoute: typeof DogsDogIdRoute
+  MatchesMatchIdRoute: typeof MatchesMatchIdRoute
+  DogsBreedsBreedRoute: typeof DogsBreedsBreedRoute
 }
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
-  ListRoute: ListRoute,
+  DogsDogIdRoute: DogsDogIdRoute,
+  MatchesMatchIdRoute: MatchesMatchIdRoute,
+  DogsBreedsBreedRoute: DogsBreedsBreedRoute,
 }
 
 export const routeTree = rootRoute
@@ -97,14 +138,22 @@ export const routeTree = rootRoute
       "filePath": "__root.tsx",
       "children": [
         "/",
-        "/list"
+        "/dogs/$dogId",
+        "/matches/$matchId",
+        "/dogs/breeds/$breed"
       ]
     },
     "/": {
       "filePath": "index.tsx"
     },
-    "/list": {
-      "filePath": "list.tsx"
+    "/dogs/$dogId": {
+      "filePath": "dogs/$dogId.tsx"
+    },
+    "/matches/$matchId": {
+      "filePath": "matches/$matchId.tsx"
+    },
+    "/dogs/breeds/$breed": {
+      "filePath": "dogs/breeds/$breed.tsx"
     }
   }
 }
