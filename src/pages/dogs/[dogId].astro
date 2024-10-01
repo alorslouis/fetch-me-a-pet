@@ -42,12 +42,6 @@ Astro.locals.runtime.ctx.waitUntil(
 <Layout title={dogTitleConstructor(thisDog)} isHTMX={true}>
 	<div class="grid grid-cols-1 lg:grid-cols-2 container mx-auto gap-4">
 		<GenericDogView dog={thisDog} canFavorite={true} />
-		<DogTable
-			lockedBreeds={[thisDog.breed]}
-			partialProps={{
-				breeds: [thisDog.breed],
-				sort: "breed:asc",
-			}}
-		/>
+		<DogTable lockedBreeds={[thisDog.breed]} />
 	</div>
 </Layout>

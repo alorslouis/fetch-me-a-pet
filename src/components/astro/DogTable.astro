@@ -180,9 +180,14 @@ const headerVals = dogColumnValues.map((k) => formatColNames(k));
 										value={
 											breed
 										}
-										selected={searchTerm?.breeds?.includes(
-											breed,
-										)}
+										selected={
+											searchTerm?.breeds?.includes(
+												breed,
+											) ||
+											lockedBreeds
+												? true
+												: false
+										}
 									>
 										{
 											breed
