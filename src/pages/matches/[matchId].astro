@@ -1,0 +1,58 @@
+---
+import { z } from "zod";
+import Layout from "@layouts/Layout.astro";
+import GenericDogView from "@components/astro/GenericDogView.astro";
+import { $matches } from "@stores/matches";
+import ViewedDog from "@components/astro/viewed/ViewedDog.astro";
+
+const { matchId } = Astro.params;
+
+const parseMatch = z.string().safeParse(matchId);
+
+if (!parseMatch.success) return Astro.redirect("/matches");
+
+const match = parseMatch.data;
+
+const matched = $matches.get()[match];
+
+if (!matched) return Astro.redirect("/");
+
+const { matchedDog, matchInputs } = matched;
+---
+
+<Layout title={`matched with: ${match}`}>
+	<div class="flex flex-col gap-4">
+		<div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+			<div>
+				<h2 class="text-xl font-bold my-2">
+					matched with:
+				</h2>
+				<GenericDogView dog={matchedDog} />
+			</div>
+			<div class="flex flex-col gap-4">
+				<h3 class="text-xl font-bold my-2">
+					you favorited:
+				</h3>
+
+				<ul class="flex flex-col gap-2">
+					{
+						matchInputs.map((faveDog) => {
+							return (
+								<li>
+									<ViewedDog
+										viewedDog={{
+											...faveDog,
+											viewedAt: new Date(
+												Date.now(),
+											),
+										}}
+									/>
+								</li>
+							);
+						})
+					}
+				</ul>
+			</div>
+		</div>
+	</div>
+</Layout>

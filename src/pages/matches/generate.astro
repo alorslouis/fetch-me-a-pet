@@ -1,0 +1,92 @@
+---
+import { z } from "zod";
+import Layout from "@layouts/Layout.astro";
+import { $dogFavorites } from "@stores/favorites";
+import { fetchFetch } from "@utils/fetchFetch";
+import { dogParser } from "@typedef/apiTypes";
+import { actions } from "astro:actions";
+import { nanoid } from "nanoid";
+
+const getFavorites = $dogFavorites.get();
+const favoriteValues = Object.values(getFavorites).filter((x) => x !== null);
+
+console.log({ favoriteValues });
+
+const favorites = favoriteValues.map((x) => x?.id);
+
+const generateMatch = await fetchFetch(Astro, {
+	path: "/dogs/match",
+	method: "POST",
+	data: favorites,
+});
+
+if (!generateMatch.ok) {
+	console.log("generateMatch failed");
+	console.log(JSON.stringify(generateMatch));
+	return Astro.redirect("/matches");
+}
+
+const matchedWith = await generateMatch.json();
+
+const parseMatch = z
+	.object({
+		match: z.string(),
+	})
+	.safeParse(matchedWith);
+
+if (!parseMatch.success) {
+	console.log("parseMatch fail");
+	console.log(JSON.stringify(parseMatch.error));
+	return Astro.redirect("/matches");
+}
+
+const { match } = parseMatch.data;
+
+const getDog = await fetchFetch(Astro, {
+	path: "/dogs",
+	method: "POST",
+	data: [match],
+});
+
+if (!getDog.ok) {
+	console.log("getDog failed");
+	console.log(JSON.stringify(getDog));
+	return Astro.redirect("/matches");
+}
+
+const getDogReturn = await getDog.json();
+
+console.log({ getDogReturn });
+
+const matchedDog = dogParser.array().safeParse(getDogReturn);
+
+if (!matchedDog.success) {
+	console.log("matchedDog fail");
+	console.log(JSON.stringify(matchedDog.error));
+	return Astro.redirect("/matches");
+}
+const matchId = nanoid();
+
+const { data, error } = await Astro.callAction(actions.putMatch, {
+	matchInfo: {
+		matchedDog: {
+			...matchedDog.data[0],
+			matchId,
+		},
+		matchInputs: favoriteValues,
+	},
+});
+
+if (error) {
+	console.log(JSON.stringify(error));
+}
+
+if (!data) return Astro.redirect("/matches");
+
+// TODO: fix this!
+$dogFavorites.set({});
+
+console.log({ data });
+
+return Astro.redirect(`/matches/${data?.matchId}`);
+---

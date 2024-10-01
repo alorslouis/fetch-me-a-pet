@@ -7,6 +7,12 @@ import {
 } from "../appTypes/apiTypes";
 import { z, type ZodError } from "zod";
 import { userStore } from "src/store/user";
+import { $dogFavorites } from "@stores/favorites";
+import { $matches } from "@stores/matches";
+import { $viewedDog } from "@stores/seenDog";
+import type { ZodIssue } from "astro:schema";
+
+let loginErrorsArr: ZodIssue[] = [];
 
 if (Astro.request.method === "POST") {
 	const formData = await Astro.request.formData();
@@ -17,17 +23,21 @@ if (Astro.request.method === "POST") {
 	console.log(JSON.stringify(parsedFormData));
 
 	if (parsedFormData.success) {
+		const { data } = parsedFormData;
 		const postLogin = await fetch(
 			"https://frontend-take-home-service.fetch.com/auth/login",
 			{
 				method: "POST",
 				headers: {
 					"Content-Type": "application/json",
-					Accept: "*/*",
 					"Accept-Encoding": "gzip, deflate, br",
 					Connection: "keep-alive",
+					//NOTE: lol
+					// the endpoint doesn't like !userUsers
+					"User-Agent":
+						"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.6 Safari/605.1.15",
 				},
-				body: JSON.stringify(parsedFormData.data),
+				body: JSON.stringify(data),
 				redirect: "follow",
 			},
 		);
@@ -130,6 +140,8 @@ if (Astro.request.method === "POST") {
 		console.log({ cookiesA: cookies });
 		console.log({ cookiesF: cookiesFormatted });
 
+		// NOTE: we only need the fetch-access-token for this
+		// BUT it's a good pattern so we'll keep for expositional purposes
 		for (const cookie of cookiesFormatted) {
 			const { cookieName, cookieValue, ...optionals } =
 				cookie;
@@ -150,15 +162,22 @@ if (Astro.request.method === "POST") {
 			}
 		}
 
+		// reinit stores on login
+		// so we don't have dirty caches from multi-user login!
 		userStore.set(parsedFormData.data);
+		$dogFavorites.set({});
+		$matches.set({});
+		$viewedDog.set({});
 
 		return Astro.redirect("/");
+	} else {
+		console.log({ errors: parsedFormData.error.errors });
+		loginErrorsArr = parsedFormData.error.errors;
 	}
 }
 ---
 
 <Layout title="please login">
-	<div>login</div>
 	<form class="flex flex-col w-fit mx-auto my-auto" method="post">
 		<input
 			type="text"
@@ -180,5 +199,14 @@ if (Astro.request.method === "POST") {
 		>
 			login
 		</button>
+		{
+			loginErrorsArr?.length
+				? loginErrorsArr.map((err) => (
+						<p class="text-red-500 text-center py-2 px-6 border rounded-lg my-4 border-red-500">
+							{err.message}
+						</p>
+					))
+				: null
+		}
 	</form>
 </Layout>

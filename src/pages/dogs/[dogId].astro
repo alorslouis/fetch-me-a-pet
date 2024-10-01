@@ -1,39 +1,53 @@
 ---
-import { dogParser } from "@typedef/apiTypes";
 import { z } from "zod";
 import Layout from "@layouts/Layout.astro";
-import { fetchFetch } from "src/utils/fetchFetch";
-import { Image } from "astro:assets";
+import { actions } from "astro:actions";
+import GenericDogView from "@components/astro/GenericDogView.astro";
+import DogTable from "@components/astro/DogTable.astro";
 
-let { dogId } = Astro.params;
+const { dogId } = Astro.params;
+
+if (!dogId) return Astro.redirect("/");
 
 const dogIdParsed = z.string().safeParse(dogId);
 
 if (!dogIdParsed.success) return Astro.redirect("/");
 
-const getDog = await fetchFetch(Astro, {
-	path: "/dogs",
-	method: "POST",
-	data: [dogIdParsed.data],
+const { data, error } = await Astro.callAction(actions.getDogs.getDogs, {
+	dogId: [dogIdParsed.data],
 });
 
-if (!getDog.ok) throw new Error(`failed fetching dogs`);
+if (error) return Astro.redirect("/404");
 
-const dogs = dogParser.array().parse(await getDog.json());
+const { dogs } = data;
 
-const { img, name, breed } = dogs[0];
+if (!dogs?.length) return Astro.redirect("/");
+
+const thisDog = dogs[0];
+
+const dogTitleConstructor = (dog: typeof thisDog) =>
+	`${dog.name} • ${dog.breed} • ${dog.age} • ${dog.zip_code}`;
+
+// INFO: stash viewed
+// no await as we don't care! not relevant to showing this page
+// BUT we'll call .waitUntil here, so CF doesn't close the worker until this call is finished
+// but will return the SSR ASAP
+Astro.locals.runtime.ctx.waitUntil(
+	Astro.callAction(actions.viewedDog.putViewed, {
+		dog: thisDog,
+	}),
+);
 ---
 
-<Layout title={name}>
-	<div class="flex gap-2 container mx-auto">
-		<Image
-			src={img}
-			alt={`picture of ${name}, a ${breed}`}
-			inferSize
-			class="rounded-lg"
+<Layout title={dogTitleConstructor(thisDog)} isHTMX={true}>
+	<div class="grid grid-cols-1 lg:grid-cols-2 container mx-auto gap-4">
+		<GenericDogView dog={thisDog} canFavorite={true} />
+		<DogTable
+			lockedBreeds={[thisDog.breed]}
+			partialProps={{
+				breeds: [thisDog.breed],
+				sort: "breed:asc",
+			}}
 		/>
-		<div class="flex flex-col text-center gap-2">
-			{name}
-		</div>
 	</div>
 </Layout>

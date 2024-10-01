@@ -1,10 +1,9 @@
 ---
-import { z } from "zod";
 import Layout from "@layouts/Layout.astro";
 import DogTable from "@components/astro/DogTable.astro";
-import { fetchFetch } from "src/utils/fetchFetch";
-import { dogSearchFetchParser, type DogSearchParams } from "@typedef/apiTypes";
+import { type DogSearchParams } from "@typedef/apiTypes";
 import { breedsStore } from "@stores/allBreeds";
+import { searchTermsStore } from "@stores/search";
 
 const { breed } = Astro.params;
 
@@ -12,27 +11,20 @@ const breeds = breedsStore.get();
 
 if (!breed || !breeds?.includes(breed)) return Astro.redirect("/404");
 
-//const fetchByBreed = await fetchFetch(Astro, {
-//	path: "/dogs/search",
-//	method: "GET",
-//	data: {
-//		breeds: [breed],
-//	},
-//});
+const existingSearchTerms = searchTermsStore.get();
 
-const partialProps: DogSearchParams = {
+searchTermsStore.set({
+	...existingSearchTerms,
 	breeds: [breed],
-};
-
-//const fetchedDogIds = dogSearchFetchParser.parse(await fetchByBreed.json());
-//const dogIds = fetchedDogIds.resultIds;
+	from: 0,
+});
 ---
 
-<Layout title={breed}>
+<Layout title={breed} isHTMX={true}>
 	<div class="flex gap-2 container mx-auto">
 		{breed}
 	</div>
 	<div class="my-4 container mx-auto">
-		<DogTable partialProps={partialProps} />
+		<DogTable lockedBreeds={[breed]} />
 	</div>
 </Layout>

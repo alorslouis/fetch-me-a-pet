@@ -1,7 +1,23 @@
 ---
-//context.locals.runtime.ctx.waitUntil(fetch(""))
-
 try {
+	const authCookie = Astro.cookies.get("fetch-access-token")?.value;
+	Astro.locals.runtime.ctx.waitUntil(
+		fetch(
+			"https://frontend-take-home-service.fetch.com/auth/logout",
+
+			{
+				method: "POST",
+				headers: {
+					"Content-Type": "application/json",
+					"Accept-Encoding": "gzip, deflate, br",
+					Connection: "keep-alive",
+					Cookie: `fetch-access-token=${authCookie}`,
+					"User-Agent":
+						"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.6 Safari/605.1.15",
+				},
+			},
+		),
+	);
 	Astro.cookies.delete("AWSALB");
 	Astro.cookies.delete("AWSALBCORS");
 	Astro.cookies.delete("fetch-access-token");

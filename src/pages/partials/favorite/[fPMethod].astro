@@ -1,0 +1,80 @@
+---
+export const partial = true;
+
+import { z } from "zod";
+import { $dogFavorites } from "@stores/favorites";
+import {
+	type DogWithFavorite,
+	coercedDogWithFavorite,
+} from "@typedef/apiTypes";
+import FavoriteButton from "@components/astro/FavoriteButton.astro";
+import FavoriteDog from "@components/astro/FavoriteDog.astro";
+import { favoriteIdConstructor } from "@utils/favoriteIdConstructor";
+import { actions } from "astro:actions";
+
+const { fPMethod } = Astro.params;
+
+export const favoritePartialMethod = z.enum(["tableRow", "faveRow"]);
+
+export type FavoritePartialMethod = z.infer<typeof favoritePartialMethod>;
+
+const partialMethod = favoritePartialMethod.safeParse(fPMethod);
+
+const reqFormData = await Astro.request.formData();
+
+if (!partialMethod.success || !reqFormData)
+	throw new Error("failed to get that id");
+
+const f = coercedDogWithFavorite.parse(Object.fromEntries(reqFormData));
+
+console.log({ f });
+
+if (f.isFavorite) {
+	const { data, error } = await Astro.callAction(actions.deleteKV, {
+		dogId: f.id,
+	});
+	$dogFavorites.setKey(f.id, null);
+} else {
+	const { data, error } = await Astro.callAction(actions.putFavoriteKVs, {
+		dog: {
+			...f,
+			isFavorite: true,
+		},
+	});
+	$dogFavorites.setKey(f.id, {
+		...f,
+		isFavorite: true,
+	});
+}
+
+const mutateFavorite: DogWithFavorite = { ...f, isFavorite: !f.isFavorite };
+
+console.log({ partialMethod });
+
+const favoriteId = favoriteIdConstructor(f.id, "div");
+const deleteId = `delete:#${favoriteId}`;
+---
+
+{/*
+/
+/ toggle button in table
+/
+*/}
+{
+	partialMethod.data === "faveRow" ? (
+		<FavoriteButton dog={mutateFavorite} favoritePartialMethod="tableRow" hx-swap-oob=`#${favoriteIdConstructor(mutateFavorite.id, "div")}`/>
+	) : (
+		<FavoriteButton dog={mutateFavorite} favoritePartialMethod="tableRow" />
+	)
+}
+
+{/*
+/
+/ add/remove from favorites row
+/
+*/}
+<div
+	hx-swap-oob=`${f.isFavorite ? deleteId : "beforeend:#favoriteDogsDisplay"}`
+>
+	<FavoriteDog dog={mutateFavorite} />
+</div>

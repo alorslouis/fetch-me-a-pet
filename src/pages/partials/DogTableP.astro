@@ -1,0 +1,86 @@
+---
+export const partial = true;
+
+import DogTable from "@components/astro/DogTable.astro";
+import {
+	dogSearchParams,
+	sortDirection,
+	sortableSearchKeys,
+	nextSearchParamParser,
+	sortSchema,
+	type DogSearchParams,
+} from "@typedef/apiTypes";
+
+import { searchTermsStore } from "@stores/search";
+
+const reqUrl = Astro.url;
+
+const formData = await Astro.request.formData();
+
+console.log({ formData });
+
+const formDataEntries: any = {};
+
+for (const [key, value] of formData.entries()) {
+	if (formDataEntries[key]) {
+		if (!Array.isArray(formDataEntries[key])) {
+			formDataEntries[key] = [formDataEntries[key]];
+		}
+		formDataEntries[key].push(value);
+	} else {
+		if (
+			key === "breeds" ||
+			key === "zipCodes" ||
+			key === "lockedBreeds"
+		) {
+			formDataEntries[key] = [value];
+		} else {
+			formDataEntries[key] = value;
+		}
+	}
+}
+
+const sortOption = sortableSearchKeys.parse(formDataEntries["sortOption"]);
+const sortDir = sortDirection.parse(formDataEntries["sortDir"]);
+
+console.log({ sortOption, sortDir });
+
+const searchParamsObj = nextSearchParamParser.safeParse(
+	Object.fromEntries(reqUrl.searchParams),
+);
+
+const formParse = dogSearchParams.safeParse(formDataEntries);
+
+console.log(JSON.stringify(formParse));
+
+console.log({ formDataEntries, searchParamsObj });
+
+const combinedSort = `${sortOption}:${sortDir}`;
+
+// NOTE: we have individual controls on the form for sortDir, sortOption
+// so we needed combine and set here
+// the individual controls will be stripped from the obj when passed/parsed
+// so !issue just spreading
+let newSearchFields: DogSearchParams = {
+	...formParse?.data,
+	sort: sortSchema.parse(combinedSort),
+};
+
+if (searchParamsObj.success) {
+	newSearchFields = {
+		...newSearchFields,
+		...searchParamsObj.data,
+	};
+}
+
+const parsedSearchParams = dogSearchParams.safeParse(newSearchFields);
+
+if (parsedSearchParams.success) {
+	searchTermsStore.set({
+		...parsedSearchParams?.data,
+		...searchParamsObj.data,
+	});
+}
+---
+
+<DogTable lockedBreeds={parsedSearchParams.data?.lockedBreeds} />
